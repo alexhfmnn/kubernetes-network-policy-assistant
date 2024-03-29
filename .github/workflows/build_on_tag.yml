@@ -1,0 +1,26 @@
+name: Build image on tag
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+  build:
+    name: Build and push
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: 'stable'
+    - name: Set up ko
+      uses: ko-build/setup-ko@v0.6
+    - name: Build image with ko
+      env:
+        KO_DOCKER_REPO: ${{ secrets.KO_DOCKER_REPO }}/k8s-netpol-assistant
+      run: |
+        ko login ${{ secrets.REPO_URL }} -u ${{ secrets.REPO_USER }} -p ${{ secrets.REPO_TOKEN }}
+        ko build ./cmd/cyclonus/ --platform all --bare --sbom none --tags ${GITHUB_REF_NAME},latest
